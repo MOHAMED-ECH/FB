@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DOCTOR
+  SECRETARY
+}
+
+enum ConsultationType {
+  FIRST
+  CONTROL
+  OTHER
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CANCELLED
+  DONE
+  NO_SHOW
+}
+
+enum WaitingStatus {
+  WAITING
+  IN_PROGRESS
+  DONE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  active       Boolean  @default(true)
+  permRdv      Boolean  @default(true)
+  permFile     Boolean  @default(true)
+  permPaie     Boolean  @default(true)
+  permPatAdm   Boolean  @default(true)
+  permPatConst Boolean  @default(false)
+  permPatMed   Boolean  @default(false)
+  permStats    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  consultations Consultation[]
+  auditLogs     AuditLog[]
+}
+
+model Patient {
+  id           String    @id @default(cuid())
+  lastName     String
+  firstName    String
+  birthDate    DateTime
+  sex          String
+  coverageType String
+  phone        String
+  cin          String?
+  address      String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  medical         PatientMedical?
+  appointments    Appointment[]
+  consultations   Consultation[]
+  waitingEntries  WaitingEntry[]
+  payments        Payment[]
+}
+
+model PatientMedical {
+  id            String   @id @default(cuid())
+  patientId     String   @unique
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  bloodPressure String?
+  weight        String?
+  height        String?
+  pulse         String?
+  antecedents   String?
+  diagnostics   String?
+  updatedAt     DateTime @updatedAt
+
+  documents MedicalDocument[]
+}
+
+model MedicalDocument {
+  id        String         @id @default(cuid())
+  medicalId String
+  medical   PatientMedical @relation(fields: [medicalId], references: [id], onDelete: Cascade)
+  docType   String
+  title     String?
+  examDate  DateTime?
+  fileName  String
+  filePath  String
+  createdAt DateTime       @default(now())
+}
+
+model Consultation {
+  id              String           @id @default(cuid())
+  patientId       String
+  patient         Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId        String
+  doctor          User             @relation(fields: [doctorId], references: [id])
+  date            DateTime         @default(now())
+  type            ConsultationType
+  notes           String?
+  appointmentId   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  payments Payment[]
+}
+
+model Appointment {
+  id        String            @id @default(cuid())
+  patientId String
+  patient   Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  start     DateTime
+  end       DateTime
+  type      ConsultationType
+  motif     String
+  status    AppointmentStatus @default(SCHEDULED)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model WaitingEntry {
+  id        String        @id @default(cuid())
+  patientId String
+  patient   Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  day       DateTime
+  arrivedAt DateTime      @default(now())
+  status    WaitingStatus @default(WAITING)
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  patientId       String
+  patient         Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultationId  String?
+  consultation    Consultation? @relation(fields: [consultationId], references: [id])
+  amount          Float
+  method          String
+  paidAt          DateTime      @default(now())
+  note            String?
+}
+
+model Tarif {
+  id     String @id @default(cuid())
+  label  String
+  amount Float
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  resource  String
+  meta      String?
+  createdAt DateTime @default(now())
+}

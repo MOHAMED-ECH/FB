@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-cabinet-primary: #1a4d33;
+  --color-cabinet-primary-dark: #0f2e1f;
+  --color-cabinet-secondary: #c5b398;
+  --color-cabinet-accent: #e5d8c4;
+  --color-cabinet-accent-dark: #9a8668;
+  --color-cabinet-bg: #f4f1ea;
+  --color-cabinet-cream: #fdfcfa;
+  --color-cabinet-card: #ffffff;
+  --color-cabinet-border: #e4dfd4;
+  --color-cabinet-text: #1f1f1f;
+  --color-cabinet-muted: #5a5a5a;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-geist-mono);
+  --shadow-cabinet-soft: 0 10px 40px -12px rgb(26 77 51 / 0.12);
+  --shadow-cabinet-glow: 0 20px 50px -18px rgb(26 77 51 / 0.18);
+}
+
+:root {
+  --background: var(--color-cabinet-bg);
+  --foreground: var(--color-cabinet-text);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-cabinet-bg);
+    color: var(--color-cabinet-text);
+    background-image:
+      radial-gradient(ellipse 120% 80% at 0% -20%, rgb(197 179 152 / 0.35), transparent 50%),
+      radial-gradient(ellipse 80% 60% at 100% 0%, rgb(26 77 51 / 0.08), transparent 45%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgb(26 77 51 / 0.05), transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+/* Grain léger (SVG data URI) pour texture premium */
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+.font-heading {
+  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+}
