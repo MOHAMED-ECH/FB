@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { InvoiceStatus } from "@prisma/client";
 import { isDoctor, requireUser } from "@/lib/authorization";
+import { assertPaymentWithinRemaining, invoiceStatus } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { actionError, actionSuccess, type ActionState } from "@/lib/action-state";
@@ -17,12 +17,6 @@ const paymentSchema = z.object({
   invoiceId: optionalString,
   note: optionalString,
 });
-
-function invoiceStatus(expectedAmount: number, paidAmount: number) {
-  if (paidAmount <= 0) return InvoiceStatus.UNPAID;
-  if (paidAmount >= expectedAmount) return InvoiceStatus.PAID;
-  return InvoiceStatus.PARTIAL;
-}
 
 export async function createPayment(formData: FormData) {
   const user = await requireUser();
@@ -66,6 +60,13 @@ export async function createPayment(formData: FormData) {
       }
       consultationId = invoice.consultationId;
 
+      const alreadyPaid = await tx.payment.aggregate({
+        where: { invoiceId: invoice.id },
+        _sum: { amount: true },
+      });
+      const paidAmount = alreadyPaid._sum.amount ?? 0;
+      assertPaymentWithinRemaining(invoice.expectedAmount, paidAmount, data.amount);
+
       await tx.payment.create({
         data: {
           patientId: data.patientId,
@@ -77,14 +78,10 @@ export async function createPayment(formData: FormData) {
         },
       });
 
-      const paid = await tx.payment.aggregate({
-        where: { invoiceId: invoice.id },
-        _sum: { amount: true },
-      });
       await tx.consultationInvoice.update({
         where: { id: invoice.id },
         data: {
-          status: invoiceStatus(invoice.expectedAmount, paid._sum.amount ?? 0),
+          status: invoiceStatus(invoice.expectedAmount, paidAmount + data.amount),
         },
       });
       return;

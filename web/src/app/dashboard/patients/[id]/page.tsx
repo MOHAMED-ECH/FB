@@ -21,6 +21,7 @@ import { AutoGrowTextarea } from "@/components/auto-grow-textarea";
 import { DocumentUploadForm } from "@/components/document-upload-form";
 import { PaymentCollectionForm } from "@/components/payment-collection-form";
 import { StatefulActionForm } from "@/components/stateful-action-form";
+import { logAudit } from "@/lib/audit";
 import { ui } from "@/lib/ui-classes";
 
 type Props = { params: Promise<{ id: string }> };
@@ -96,6 +97,14 @@ export default async function PatientDetailPage({ params }: Props) {
   });
 
   if (!patient) notFound();
+
+  await logAudit(user.id, "VIEW_PATIENT_RECORD", "Patient", {
+    patientId: patient.id,
+    medicalAccess: canMed,
+    constantsAccess: canConst,
+    paymentAccess: canPay,
+    adminAccess: canAdm,
+  });
 
   const age = differenceInYears(new Date(), patient.birthDate);
   const medicalDocs: MedicalDocRow[] =

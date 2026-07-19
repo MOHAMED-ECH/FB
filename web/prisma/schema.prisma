@@ -269,3 +269,16 @@ model AuditLog {
   @@index([createdAt])
   @@index([userId, createdAt])
 }
+
+model LoginAttempt {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  email       String
+  ip          String
+  attempts    Int       @default(0)
+  lastAttempt DateTime  @default(now())
+  lockedUntil DateTime?
+
+  @@index([email, lastAttempt])
+  @@index([lockedUntil])
+}

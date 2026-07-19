@@ -33,7 +33,7 @@ L’application vise un usage quotidien par trois profils :
 - `prisma/schema.prisma` : modèle de données.
 - `prisma/seed.ts` : données initiales.
 - `prisma/reset-chief-password.ts` : restauration locale du mot de passe du médecin chef.
-- `public/uploads` : documents médicaux téléversés.
+- `storage/uploads` : documents médicaux téléversés, hors exposition publique directe.
 
 ## Installation initiale
 
@@ -71,10 +71,10 @@ Le seed crée les comptes de démarrage suivants :
 
 - Médecin chef :
   - email : `medecin@cabinet.local`
-  - mot de passe : `Admin123!`
+  - mot de passe : à générer hors documentation versionnée
 - Secrétaire :
   - email : `secretaire@cabinet.local`
-  - mot de passe : `Secret123!`
+  - mot de passe : à générer hors documentation versionnée
 
 Ces identifiants sont destinés au démarrage et aux tests. Les mots de passe initiaux du seed doivent être changés dès la première installation réelle. Le compte médecin chef est le compte fondateur et porte le champ `isChiefDoctor`.
 
@@ -305,7 +305,7 @@ L’application doit éviter les pages blanches et erreurs techniques exposées 
 
 ## Sauvegarde et exploitation
 
-La base SQLite et le dossier `public/uploads` doivent être sauvegardés ensemble. Une restauration de base sans les documents rendrait les références de fichiers incomplètes.
+La base SQLite et le dossier `storage/uploads` doivent être sauvegardés ensemble. Une restauration de base sans les documents rendrait les références de fichiers incomplètes.
 
 Avant une intervention importante :
 

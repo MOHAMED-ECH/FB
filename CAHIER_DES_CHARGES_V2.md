@@ -310,7 +310,7 @@ Champs attendus (évolutifs) :
 Rôle	Email	Mot de passe
 Médecin (admin)
 medecin@cabinet.local
-Admin123!
+Mot de passe initial a generer hors documentation versionnee.
 Secrétaire
 secretaire@cabinet.local
-Secret123!
+Mot de passe initial a generer hors documentation versionnee.

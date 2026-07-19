@@ -12,9 +12,9 @@
   --color-cabinet-border: #ddd4c2;
   --color-cabinet-text: #17221d;
   --color-cabinet-muted: #64706a;
-  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
-  --font-mono: var(--font-geist-mono);
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-display: ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
   --shadow-cabinet-soft: 0 16px 45px -30px rgb(7 54 36 / 0.45);
   --shadow-cabinet-glow: 0 18px 55px -36px rgb(15 90 63 / 0.55);
 }
@@ -73,7 +73,7 @@ body > * {
 }
 
 .font-heading {
-  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-family: var(--font-display);
 }
 
 .neuro-orbit {

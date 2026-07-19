@@ -252,12 +252,12 @@ export function DeleteUserForm({ account }: { account: Pick<SecretaryPermissions
     <StatefulActionForm action={deleteUserWithState} className="space-y-2">
       <input type="hidden" name="userId" value={account.id} />
       <ConfirmSubmitButton
-        message={`Supprimer le compte ${account.name} ?`}
+        message={`Retirer l'acces du compte ${account.name} ?`}
         confirmTitle="Supprimer ou désactiver le compte"
         confirmDescription="Le compte sera supprimé s’il n’a aucun historique. Sinon, il sera désactivé afin de conserver les consultations et les traces d’audit."
         className={ui.btnDanger}
       >
-        Supprimer
+        Retirer l&apos;acces
       </ConfirmSubmitButton>
     </StatefulActionForm>
   );

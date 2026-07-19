@@ -18,7 +18,7 @@ export default async function StatsPage() {
   const to = endOfMonth(now);
   const doctor = isDoctor(user);
 
-  const [consultCount, patientCount, revenue, apptFuture, byType] = await Promise.all([
+  const [consultCount, patientCount, revenue, apptFuture, apptNoShow, apptPastTracked, byType] = await Promise.all([
     doctor ? prisma.consultation.count({ where: { date: { gte: from, lte: to } } }) : Promise.resolve(null),
     hasPermission(user, "permPatAdm") || hasPermission(user, "permPatMed") ? prisma.patient.count() : Promise.resolve(null),
     hasPermission(user, "permPaie")
@@ -32,6 +32,16 @@ export default async function StatsPage() {
           where: { status: AppointmentStatus.SCHEDULED, start: { gte: now } },
         })
       : Promise.resolve(null),
+    hasPermission(user, "permRdv")
+      ? prisma.appointment.count({
+          where: { status: AppointmentStatus.NO_SHOW, start: { gte: from, lte: now } },
+        })
+      : Promise.resolve(null),
+    hasPermission(user, "permRdv")
+      ? prisma.appointment.count({
+          where: { status: { in: [AppointmentStatus.DONE, AppointmentStatus.NO_SHOW] }, start: { gte: from, lte: now } },
+        })
+      : Promise.resolve(null),
     doctor
       ? prisma.consultation.groupBy({
           by: ["type"],
@@ -40,6 +50,10 @@ export default async function StatsPage() {
         })
       : Promise.resolve([] as { type: ConsultationType; _count: { _all: number } }[]),
   ]);
+  const noShowRate =
+    apptNoShow !== null && apptPastTracked !== null && apptPastTracked > 0
+      ? `${Math.round((apptNoShow / apptPastTracked) * 100)}%`
+      : null;
 
   const stats = [
     consultCount !== null && { label: "Consultations", value: String(consultCount), detail: "ce mois" },
@@ -47,6 +61,9 @@ export default async function StatsPage() {
     patientCount !== null && { label: "Patients", value: String(patientCount), detail: "enregistrés" },
     apptFuture !== null && { label: "RDV", value: String(apptFuture), detail: "à venir" },
   ].filter(Boolean) as { label: string; value: string; detail: string }[];
+  if (noShowRate !== null) {
+    stats.push({ label: "RDV non honores", value: noShowRate, detail: `${apptNoShow} ce mois` });
+  }
 
   return (
     <div className={ui.pageWrap}>

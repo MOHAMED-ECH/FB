@@ -1,8 +1,15 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { authPayloadFromUser, permissionFields, sessionMaxAgeSeconds } from "./auth-payload";
 import { prisma } from "./prisma";
 import { verifyPassword } from "./password";
 import { logAudit } from "./audit";
+import {
+  assertLoginAllowed,
+  loginClientIp,
+  recordLoginFailure,
+  resetLoginFailures,
+} from "./login-attempts";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -12,29 +19,24 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null;
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.trim().toLowerCase() },
-        });
-        if (!user?.active) return null;
-        const ok = await verifyPassword(credentials.password, user.passwordHash);
-        if (!ok) return null;
-        await logAudit(user.id, "LOGIN", "User", { email: user.email });
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          isChiefDoctor: user.isChiefDoctor,
-          permRdv: user.permRdv,
-          permFile: user.permFile,
-          permPaie: user.permPaie,
-          permPatAdm: user.permPatAdm,
-          permPatConst: user.permPatConst,
-          permPatMed: user.permPatMed,
-          permStats: user.permStats,
+        const email = credentials.email.trim().toLowerCase();
+        const ip = loginClientIp(request);
+        await assertLoginAllowed(email, ip);
+
+        const fail = async () => {
+          await recordLoginFailure(email, ip);
+          return null;
         };
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user?.active) return fail();
+        const ok = await verifyPassword(credentials.password, user.passwordHash);
+        if (!ok) return fail();
+        await resetLoginFailures(email, ip);
+        await logAudit(user.id, "LOGIN", "User", { email: user.email });
+        return authPayloadFromUser(user);
       },
     }),
   ],
@@ -43,13 +45,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role;
         token.isChiefDoctor = user.isChiefDoctor;
-        token.permRdv = user.permRdv;
-        token.permFile = user.permFile;
-        token.permPaie = user.permPaie;
-        token.permPatAdm = user.permPatAdm;
-        token.permPatConst = user.permPatConst;
-        token.permPatMed = user.permPatMed;
-        token.permStats = user.permStats;
+        for (const field of permissionFields) token[field] = user[field];
       }
       return token;
     },
@@ -58,13 +54,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub as string;
         session.user.role = token.role;
         session.user.isChiefDoctor = token.isChiefDoctor;
-        session.user.permRdv = token.permRdv;
-        session.user.permFile = token.permFile;
-        session.user.permPaie = token.permPaie;
-        session.user.permPatAdm = token.permPatAdm;
-        session.user.permPatConst = token.permPatConst;
-        session.user.permPatMed = token.permPatMed;
-        session.user.permStats = token.permStats;
+        for (const field of permissionFields) session.user[field] = token[field];
       }
       return session;
     },
@@ -74,7 +64,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 8 * 60 * 60,
+    maxAge: sessionMaxAgeSeconds,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

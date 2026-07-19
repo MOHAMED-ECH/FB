@@ -2,6 +2,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 import { getCurrentUser, hasPermission } from "@/lib/authorization";
+import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 
 const inlineMimeByExtension: Record<string, string> = {
@@ -63,6 +64,12 @@ export async function GET(
   const ext = path.extname(doc.filePath).toLowerCase();
   const mime = inlineMimeByExtension[ext] ?? "application/octet-stream";
   const body = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+
+  await logAudit(user.id, "OPEN_MEDICAL_DOCUMENT", "MedicalDocument", {
+    documentId: doc.id,
+    patientId: doc.medical.patientId,
+    fileName: doc.fileName,
+  });
 
   return new NextResponse(body, {
     headers: {

@@ -90,6 +90,29 @@ async function cancelAppointment(id: string) {
   revalidatePath("/dashboard/agenda");
 }
 
+async function markAppointmentNoShow(id: string) {
+  const user = await requirePermission("permRdv");
+  const appointment = await prisma.appointment.findUnique({
+    where: { id },
+    select: { start: true, status: true },
+  });
+  if (!appointment) throw new Error("Rendez-vous introuvable");
+  if (appointment.status !== AppointmentStatus.SCHEDULED) {
+    throw new Error("Seul un rendez-vous planifie peut etre marque absent.");
+  }
+  if (appointment.start > new Date()) {
+    throw new Error("Un rendez-vous futur ne peut pas etre marque absent.");
+  }
+
+  await prisma.appointment.update({
+    where: { id },
+    data: { status: AppointmentStatus.NO_SHOW },
+  });
+  await logAudit(user.id, "NO_SHOW", "Appointment", { id });
+  revalidatePath("/dashboard/agenda");
+  revalidatePath("/dashboard/stats");
+}
+
 async function deleteAppointment(id: string) {
   const user = await requirePermission("permRdv");
   await prisma.appointment.delete({ where: { id } });
@@ -110,6 +133,24 @@ export async function submitCancelAppointmentWithState(
   try {
     await submitCancelAppointment(formData);
     return actionSuccess("Rendez-vous annulé.");
+  } catch (error) {
+    return actionError(error);
+  }
+}
+
+export async function submitNoShowAppointment(formData: FormData) {
+  const id = formValue(formData, "id");
+  if (!id) throw new Error("Identifiant manquant");
+  await markAppointmentNoShow(id);
+}
+
+export async function submitNoShowAppointmentWithState(
+  _previousState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    await submitNoShowAppointment(formData);
+    return actionSuccess("Rendez-vous marque absent.");
   } catch (error) {
     return actionError(error);
   }

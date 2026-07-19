@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useState } from "react";
 
 const specialties = [
   "Exploration EEG",
@@ -48,14 +50,37 @@ function NeuroScene() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("medecin@cabinet.local");
   const [password, setPassword] = useState("");
-  const [error] = useState<string | null>(() => {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("error")
       ? "Identifiants incorrects ou compte désactivé."
       : null;
   });
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+      callbackUrl: "/dashboard",
+    });
+
+    setPending(false);
+    if (result?.ok) {
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+    setError("Identifiants incorrects, compte desactive ou trop de tentatives.");
+  }
 
   return (
     <main className="min-h-full bg-cabinet-bg">
@@ -155,7 +180,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form action="/api/local-login" method="post" className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase text-cabinet-primary-dark">
                 Email
@@ -195,6 +220,7 @@ export default function LoginPage() {
             )}
             <button
               type="submit"
+              disabled={pending}
               className="w-full rounded-md bg-cabinet-primary px-4 py-3.5 text-sm font-semibold text-white shadow-[0_14px_28px_-18px_rgba(7,54,36,0.75)] transition hover:bg-cabinet-primary-dark disabled:opacity-55"
             >
               Entrer dans l’espace cabinet

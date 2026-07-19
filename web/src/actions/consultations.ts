@@ -6,6 +6,7 @@ import { addMinutes, endOfDay, startOfDay } from "date-fns";
 import { z } from "zod";
 import { AppointmentStatus, ConsultationType, InvoiceStatus, WaitingStatus } from "@prisma/client";
 import { requireDoctor } from "@/lib/authorization";
+import { invoiceStatus } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { actionError, actionSuccess, type ActionState } from "@/lib/action-state";
@@ -34,12 +35,6 @@ const consultationLabels: Record<"FIRST" | "CONTROL" | "OTHER", string> = {
   CONTROL: "Consultation de contrôle",
   OTHER: "Consultation",
 };
-
-function invoiceStatus(expectedAmount: number, paidAmount: number) {
-  if (paidAmount <= 0) return InvoiceStatus.UNPAID;
-  if (paidAmount >= expectedAmount) return InvoiceStatus.PAID;
-  return InvoiceStatus.PARTIAL;
-}
 
 export async function createConsultation(formData: FormData) {
   const user = await requireDoctor();
@@ -76,17 +71,6 @@ export async function createConsultation(formData: FormData) {
     }
 
     const end = addMinutes(start, data.nextDuration);
-    const overlap = await prisma.appointment.findFirst({
-      where: {
-        status: AppointmentStatus.SCHEDULED,
-        start: { lt: end },
-        end: { gt: start },
-      },
-      select: { id: true },
-    });
-    if (overlap) {
-      throw new Error("Le créneau du prochain RDV est déjà occupé.");
-    }
 
     nextAppointment = {
       start,
@@ -119,6 +103,18 @@ export async function createConsultation(formData: FormData) {
     });
 
     if (nextAppointment) {
+      const overlap = await tx.appointment.findFirst({
+        where: {
+          status: AppointmentStatus.SCHEDULED,
+          start: { lt: nextAppointment.end },
+          end: { gt: nextAppointment.start },
+        },
+        select: { id: true },
+      });
+      if (overlap) {
+        throw new Error("Le creneau du prochain RDV est deja occupe.");
+      }
+
       await tx.appointment.create({
         data: {
           patientId: data.patientId,

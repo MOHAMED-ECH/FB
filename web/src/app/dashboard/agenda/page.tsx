@@ -11,6 +11,7 @@ export default async function AgendaPage() {
   const user = await requirePageUser();
   if (!hasPermission(user, "permRdv")) redirect("/dashboard");
 
+  const now = new Date();
   const from = startOfDay(new Date());
   const to = addDays(from, 21);
 
@@ -72,6 +73,11 @@ export default async function AgendaPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 sm:justify-end">
+                  {appointment.start <= now && (
+                    <AppointmentActionForm id={appointment.id} kind="no-show" className={ui.btnSecondary}>
+                      Absent
+                    </AppointmentActionForm>
+                  )}
                   <AppointmentActionForm id={appointment.id} kind="cancel" className={ui.btnGhost}>
                     Annuler
                   </AppointmentActionForm>
