@@ -42,6 +42,19 @@ export function DocumentUploadForm({ patientId }: { patientId: string }) {
   const visibleMessage = clientError || serverMessage;
   const isErrorMessage = Boolean(clientError || (!dismissServerMessage && state.error));
 
+  useEffect(() => {
+    if (!visibleMessage) return;
+
+    const timer = window.setTimeout(() => {
+      setClientError("");
+      setDismissedServerMessageKey(rawServerMessage);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }, 4500);
+    return () => window.clearTimeout(timer);
+  }, [rawServerMessage, visibleMessage]);
+
   function clearUploadFeedback() {
     setClientError("");
     setDismissedServerMessageKey(rawServerMessage);
@@ -119,7 +132,7 @@ export function DocumentUploadForm({ patientId }: { patientId: string }) {
                 : "border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-100"
             }`}
           >
-            Annuler
+            Fermer
           </button>
         </div>
       )}

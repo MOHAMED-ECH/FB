@@ -26,6 +26,7 @@ const documentSchema = z.object({
 
 export type UploadMedicalDocumentState = {
   ok: boolean;
+  feedbackId?: number;
   message?: string;
   error?: string;
 };

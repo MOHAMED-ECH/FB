@@ -57,7 +57,10 @@ export function WaitingStatusForm({
       <SubmitButton className={className} pendingLabel="Mise à jour...">
         {children}
       </SubmitButton>
-      <FormFeedback state={state} />
+      <FormFeedback
+        state={state}
+        className="fixed bottom-5 right-5 z-[140] w-[min(420px,calc(100vw-2.5rem))]"
+      />
     </form>
   );
 }

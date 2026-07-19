@@ -4,6 +4,13 @@ import { hasPermission, requirePageUser } from "@/lib/authorization";
 import { prisma } from "@/lib/prisma";
 import { ui } from "@/lib/ui-classes";
 
+function formatMad(amount: number) {
+  return new Intl.NumberFormat("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export default async function PaymentsPage() {
   const user = await requirePageUser();
   if (!hasPermission(user, "permPaie")) redirect("/dashboard");
@@ -40,11 +47,18 @@ export default async function PaymentsPage() {
           <div>
             <p className={ui.eyebrow}>Suivi financier</p>
             <h1 className={ui.pageTitle}>Paiements</h1>
-            <p className={ui.pageSubtitle}>Historique récent des encaissements, filtré instantanément pendant la saisie.</p>
+            <p className={ui.pageSubtitle}>
+              Synthèse des encaissements par mode de paiement et historique récent filtrable.
+            </p>
           </div>
-          <div className="rounded-lg border border-cabinet-border bg-cabinet-cream px-5 py-3 text-right">
+          <div className="rounded-lg border border-cabinet-border bg-cabinet-cream px-5 py-3 text-right shadow-sm">
             <p className={ui.eyebrow}>Total chargé</p>
-            <p className="font-heading text-2xl font-semibold text-cabinet-primary-dark">{total.toFixed(2)} MAD</p>
+            <p className="font-heading text-2xl font-semibold tabular-nums text-cabinet-primary-dark">
+              {formatMad(total)} MAD
+            </p>
+            <p className="mt-1 text-xs font-semibold text-cabinet-muted">
+              {payments.length} derniers paiements
+            </p>
           </div>
         </div>
       </section>

@@ -660,7 +660,7 @@ function MedicalEntryManagementPanel({
               placeholder={placeholder}
               submitLabel="Enregistrer la modification"
             />
-            <StatefulActionForm action={deleteMedicalNoteEntryWithState.bind(null, patientId)} className="border-t border-cabinet-border pt-4">
+            <StatefulActionForm action={deleteMedicalNoteEntryWithState.bind(null, patientId)} className="border-t border-cabinet-border pt-4" feedback="toast">
               <input type="hidden" name="entryId" value={entry.id} />
               <ConfirmSubmitButton
                 message={`Supprimer définitivement cette entrée de ${title.toLowerCase()} ?`}
@@ -939,7 +939,7 @@ function DocumentsPanel({ patientId, medicalDocs }: { patientId: string; medical
               </div>
               <div className="flex flex-wrap gap-2 sm:justify-end">
                 <a href={`/api/files/${doc.id}`} target="_blank" rel="noreferrer" className={ui.btnSecondary}>Ouvrir</a>
-                <StatefulActionForm action={deleteMedicalDocumentWithState}>
+                <StatefulActionForm action={deleteMedicalDocumentWithState} feedback="toast">
                   <input type="hidden" name="patientId" value={patientId} />
                   <input type="hidden" name="documentId" value={doc.id} />
                   <ConfirmSubmitButton
@@ -1050,7 +1050,7 @@ function VitalsDashboard({ patientId, history, latest }: { patientId: string; hi
                     <span className="text-xs font-semibold uppercase text-cabinet-muted">
                       TA {vital.bloodPressure ?? "-"} - Poids {vital.weight ?? "-"} - Taille {vital.height ?? "-"} - Pouls {vital.pulse ?? "-"}
                     </span>
-                    <StatefulActionForm action={deletePatientVitalWithState}>
+                    <StatefulActionForm action={deletePatientVitalWithState} feedback="toast">
                       <input type="hidden" name="patientId" value={patientId} />
                       <input type="hidden" name="vitalId" value={vital.id} />
                       <ConfirmSubmitButton

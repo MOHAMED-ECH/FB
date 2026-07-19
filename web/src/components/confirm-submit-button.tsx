@@ -19,6 +19,7 @@ export function ConfirmSubmitButton({
   confirmDescription,
 }: ConfirmSubmitButtonProps) {
   const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<HTMLFormElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -33,7 +34,14 @@ export function ConfirmSubmitButton({
 
   return (
     <>
-      <button type="button" className={className} onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className={className}
+        onClick={(event) => {
+          setForm(event.currentTarget.form);
+          setOpen(true);
+        }}
+      >
         {children}
       </button>
 
@@ -58,7 +66,14 @@ export function ConfirmSubmitButton({
               <button type="button" className="rounded-md border border-cabinet-border bg-white px-4 py-2 text-sm font-semibold text-cabinet-primary-dark shadow-sm transition hover:bg-cabinet-cream" onClick={() => setOpen(false)}>
                 Annuler
               </button>
-              <button type="submit" className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-800">
+              <button
+                type="button"
+                className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-800"
+                onClick={() => {
+                  setOpen(false);
+                  form?.requestSubmit();
+                }}
+              >
                 Confirmer
               </button>
             </div>

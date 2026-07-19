@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 export type ActionState = {
   ok: boolean;
+  feedbackId?: number;
   message?: string;
   error?: string;
 };
@@ -41,9 +42,9 @@ export function toUserError(error: unknown) {
 }
 
 export function actionError(error: unknown): ActionState {
-  return { ok: false, error: toUserError(error) };
+  return { ok: false, error: toUserError(error), feedbackId: Date.now() };
 }
 
 export function actionSuccess(message: string): ActionState {
-  return { ok: true, message };
+  return { ok: true, message, feedbackId: Date.now() };
 }

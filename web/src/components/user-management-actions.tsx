@@ -228,7 +228,7 @@ export function UserActiveToggleForm({ account }: { account: Pick<SecretaryPermi
   const label = account.active ? "Désactiver" : "Réactiver";
 
   return (
-    <StatefulActionForm action={submitToggleUserActiveWithState} className="space-y-2">
+    <StatefulActionForm action={submitToggleUserActiveWithState} className="space-y-2" feedback="toast">
       <input type="hidden" name="userId" value={account.id} />
       <input type="hidden" name="nextActive" value={String(nextActive)} />
       <ConfirmSubmitButton
@@ -249,7 +249,7 @@ export function UserActiveToggleForm({ account }: { account: Pick<SecretaryPermi
 
 export function DeleteUserForm({ account }: { account: Pick<SecretaryPermissions, "id" | "name"> }) {
   return (
-    <StatefulActionForm action={deleteUserWithState} className="space-y-2">
+    <StatefulActionForm action={deleteUserWithState} className="space-y-2" feedback="toast">
       <input type="hidden" name="userId" value={account.id} />
       <ConfirmSubmitButton
         message={`Retirer l'acces du compte ${account.name} ?`}
