@@ -9,7 +9,7 @@ export function PermField({
   defaultChecked?: boolean;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-transparent px-1 py-1 text-sm transition hover:border-cabinet-border/80 hover:bg-white/60">
+    <label className="flex cursor-pointer items-center gap-3 rounded-md border border-transparent px-1 py-1 text-sm transition hover:border-cabinet-border/80 hover:bg-white/60">
       <input type="hidden" name={name} value="false" />
       <input
         type="checkbox"

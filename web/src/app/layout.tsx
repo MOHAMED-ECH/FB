@@ -33,9 +33,10 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
+      suppressHydrationWarning
       className={`${dmSans.variable} ${fraunces.variable} ${geistMono.variable} h-full scroll-smooth`}
     >
-      <body className="min-h-full font-sans text-cabinet-text antialiased">
+      <body suppressHydrationWarning className="min-h-full font-sans text-cabinet-text antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

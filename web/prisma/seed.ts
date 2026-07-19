@@ -11,6 +11,7 @@ import {
 import {
   AppointmentStatus,
   ConsultationType,
+  MedicalEntryType,
   PrismaClient,
   Role,
   WaitingStatus,
@@ -33,12 +34,13 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "medecin@cabinet.local" },
-    update: {},
+    update: { isChiefDoctor: true },
     create: {
       email: "medecin@cabinet.local",
       passwordHash: doctorHash,
       name: "Dr. Fatima Benali",
       role: Role.DOCTOR,
+      isChiefDoctor: true,
       active: true,
       permRdv: true,
       permFile: true,
@@ -345,6 +347,32 @@ async function main() {
             pulse: p.pulse ?? null,
             antecedents: p.antecedents ?? null,
             diagnostics: `${p.diagnostics ?? ""}\n[${DEMO_MARKER}]`,
+            notes: {
+              create: [
+                ...(p.antecedents
+                  ? [
+                      {
+                        type: MedicalEntryType.ANTECEDENT,
+                        content: p.antecedents,
+                        authorId: doctor.id,
+                        authorName: doctor.name,
+                        recordedAt: subDays(today, 10),
+                      },
+                    ]
+                  : []),
+                ...(p.diagnostics
+                  ? [
+                      {
+                        type: MedicalEntryType.DIAGNOSTIC,
+                        content: `${p.diagnostics}\n[${DEMO_MARKER}]`,
+                        authorId: doctor.id,
+                        authorName: doctor.name,
+                        recordedAt: subDays(today, 10),
+                      },
+                    ]
+                  : []),
+              ],
+            },
           },
         },
       },

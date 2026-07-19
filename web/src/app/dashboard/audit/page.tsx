@@ -1,13 +1,12 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { Role } from "@prisma/client";
-import { authOptions } from "@/lib/auth";
+import { AuditLiveSearch } from "@/components/audit-live-search";
+import { isChiefDoctor, requirePageUser } from "@/lib/authorization";
 import { prisma } from "@/lib/prisma";
 import { ui } from "@/lib/ui-classes";
 
 export default async function AuditPage() {
-  const session = await getServerSession(authOptions);
-  if (session?.user.role !== Role.DOCTOR) redirect("/dashboard");
+  const user = await requirePageUser();
+  if (!isChiefDoctor(user)) redirect("/dashboard");
 
   const logs = await prisma.auditLog.findMany({
     orderBy: { createdAt: "desc" },
@@ -15,40 +14,27 @@ export default async function AuditPage() {
     include: { user: { select: { email: true, name: true } } },
   });
 
+  const rows = logs.map((log) => ({
+    id: log.id,
+    createdAt: log.createdAt.toISOString(),
+    userName: log.user?.name ?? "",
+    userEmail: log.user?.email ?? "",
+    action: log.action,
+    resource: log.resource,
+    meta: log.meta ?? "",
+  }));
+
   return (
-    <div className="mx-auto max-w-5xl space-y-8 pb-12">
-      <div>
-        <h1 className={ui.pageTitle}>Journal d’audit</h1>
-        <p className={ui.pageSubtitle}>Traçabilité des actions sensibles</p>
-      </div>
-      <div className={`${ui.card} overflow-hidden p-0`}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead>
-              <tr className={ui.tableHead}>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Utilisateur</th>
-                <th className="px-4 py-3">Action</th>
-                <th className="px-4 py-3">Ressource</th>
-                <th className="px-4 py-3">Détail</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-cabinet-border/70">
-              {logs.map((l) => (
-                <tr key={l.id} className="hover:bg-cabinet-cream/40">
-                  <td className="px-4 py-3 whitespace-nowrap text-cabinet-muted">
-                    {new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "medium" }).format(l.createdAt)}
-                  </td>
-                  <td className="px-4 py-3">{l.user?.name ?? l.user?.email ?? "—"}</td>
-                  <td className="px-4 py-3 font-medium text-cabinet-primary">{l.action}</td>
-                  <td className="px-4 py-3 text-cabinet-muted">{l.resource}</td>
-                  <td className="max-w-xs truncate px-4 py-3 text-xs text-cabinet-muted">{l.meta ?? ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="mx-auto max-w-6xl space-y-7 pb-12">
+      <section className={ui.pageHeader}>
+        <div>
+          <p className={ui.eyebrow}>Traçabilité</p>
+          <h1 className={ui.pageTitle}>Journal d’audit</h1>
+          <p className={ui.pageSubtitle}>Suivi des actions sensibles, connexions et modifications métier.</p>
         </div>
-      </div>
+      </section>
+
+      <AuditLiveSearch logs={rows} />
     </div>
   );
 }

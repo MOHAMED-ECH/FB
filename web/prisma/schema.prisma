@@ -31,12 +31,24 @@ enum WaitingStatus {
   DONE
 }
 
+enum InvoiceStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum MedicalEntryType {
+  ANTECEDENT
+  DIAGNOSTIC
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
   name         String
   role         Role
+  isChiefDoctor Boolean @default(false)
   active       Boolean  @default(true)
   permRdv      Boolean  @default(true)
   permFile     Boolean  @default(true)
@@ -53,7 +65,7 @@ model User {
 }
 
 model Patient {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   lastName     String
   firstName    String
   birthDate    DateTime
@@ -62,14 +74,19 @@ model Patient {
   phone        String
   cin          String?
   address      String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  medical         PatientMedical?
-  appointments    Appointment[]
-  consultations   Consultation[]
-  waitingEntries  WaitingEntry[]
-  payments        Payment[]
+  medical        PatientMedical?
+  appointments   Appointment[]
+  consultations  Consultation[]
+  waitingEntries WaitingEntry[]
+  payments       Payment[]
+  vitals         PatientVital[]
+  invoices       ConsultationInvoice[]
+
+  @@index([lastName, firstName])
+  @@index([phone])
 }
 
 model PatientMedical {
@@ -85,6 +102,55 @@ model PatientMedical {
   updatedAt     DateTime @updatedAt
 
   documents MedicalDocument[]
+  history   MedicalHistoryEntry[]
+  notes     MedicalNoteEntry[]
+}
+
+model MedicalHistoryEntry {
+  id          String         @id @default(cuid())
+  medicalId   String
+  medical     PatientMedical @relation(fields: [medicalId], references: [id], onDelete: Cascade)
+  authorId    String?
+  authorName  String?
+  antecedents String?
+  diagnostics String?
+  recordedAt  DateTime       @default(now())
+
+  @@index([medicalId, recordedAt])
+  @@index([recordedAt])
+}
+
+model MedicalNoteEntry {
+  id            String           @id @default(cuid())
+  medicalId     String
+  medical       PatientMedical   @relation(fields: [medicalId], references: [id], onDelete: Cascade)
+  type          MedicalEntryType
+  content       String
+  authorId      String?
+  authorName    String?
+  updatedById   String?
+  updatedByName String?
+  recordedAt    DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([medicalId, type, recordedAt])
+  @@index([recordedAt])
+}
+
+model PatientVital {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  recordedById  String?
+  bloodPressure String?
+  weight        String?
+  height        String?
+  pulse         String?
+  note          String?
+  recordedAt    DateTime @default(now())
+
+  @@index([patientId, recordedAt])
+  @@index([recordedAt])
 }
 
 model MedicalDocument {
@@ -97,22 +163,46 @@ model MedicalDocument {
   fileName  String
   filePath  String
   createdAt DateTime       @default(now())
+
+  @@index([medicalId, createdAt])
 }
 
 model Consultation {
-  id              String           @id @default(cuid())
-  patientId       String
-  patient         Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctorId        String
-  doctor          User             @relation(fields: [doctorId], references: [id])
-  date            DateTime         @default(now())
-  type            ConsultationType
-  notes           String?
-  appointmentId   String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id            String           @id @default(cuid())
+  patientId     String
+  patient       Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId      String
+  doctor        User             @relation(fields: [doctorId], references: [id])
+  date          DateTime         @default(now())
+  type          ConsultationType
+  notes         String?
+  appointmentId String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   payments Payment[]
+  invoice  ConsultationInvoice?
+
+  @@index([patientId, date])
+  @@index([doctorId, date])
+}
+
+model ConsultationInvoice {
+  id             String        @id @default(cuid())
+  patientId      String
+  patient        Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultationId String        @unique
+  consultation   Consultation  @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  label          String
+  expectedAmount Float
+  status         InvoiceStatus @default(UNPAID)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  payments Payment[]
+
+  @@index([patientId, status])
+  @@index([createdAt])
 }
 
 model Appointment {
@@ -126,6 +216,9 @@ model Appointment {
   status    AppointmentStatus @default(SCHEDULED)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
+
+  @@index([status, start])
+  @@index([patientId, start])
 }
 
 model WaitingEntry {
@@ -135,18 +228,27 @@ model WaitingEntry {
   day       DateTime
   arrivedAt DateTime      @default(now())
   status    WaitingStatus @default(WAITING)
+
+  @@index([day, status])
+  @@index([patientId, day])
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  patientId       String
-  patient         Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  consultationId  String?
-  consultation    Consultation? @relation(fields: [consultationId], references: [id])
-  amount          Float
-  method          String
-  paidAt          DateTime      @default(now())
-  note            String?
+  id             String               @id @default(cuid())
+  patientId      String
+  patient        Patient              @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultationId String?
+  consultation   Consultation?        @relation(fields: [consultationId], references: [id])
+  invoiceId      String?
+  invoice        ConsultationInvoice? @relation(fields: [invoiceId], references: [id])
+  amount         Float
+  method         String
+  paidAt         DateTime             @default(now())
+  note           String?
+
+  @@index([paidAt])
+  @@index([patientId, paidAt])
+  @@index([invoiceId])
 }
 
 model Tarif {
@@ -163,4 +265,7 @@ model AuditLog {
   resource  String
   meta      String?
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }

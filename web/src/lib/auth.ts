@@ -26,6 +26,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          isChiefDoctor: user.isChiefDoctor,
           permRdv: user.permRdv,
           permFile: user.permFile,
           permPaie: user.permPaie,
@@ -41,6 +42,7 @@ export const authOptions: NextAuthOptions = {
     jwt({ token, user }) {
       if (user) {
         token.role = user.role;
+        token.isChiefDoctor = user.isChiefDoctor;
         token.permRdv = user.permRdv;
         token.permFile = user.permFile;
         token.permPaie = user.permPaie;
@@ -55,6 +57,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.sub as string;
         session.user.role = token.role;
+        session.user.isChiefDoctor = token.isChiefDoctor;
         session.user.permRdv = token.permRdv;
         session.user.permFile = token.permFile;
         session.user.permPaie = token.permPaie;

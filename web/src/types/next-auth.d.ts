@@ -6,6 +6,7 @@ declare module "next-auth" {
     user: DefaultSession["user"] & {
       id: string;
       role: Role;
+      isChiefDoctor: boolean;
       permRdv: boolean;
       permFile: boolean;
       permPaie: boolean;
@@ -18,6 +19,7 @@ declare module "next-auth" {
 
   interface User {
     role: Role;
+    isChiefDoctor: boolean;
     permRdv: boolean;
     permFile: boolean;
     permPaie: boolean;
@@ -31,6 +33,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     role: Role;
+    isChiefDoctor: boolean;
     permRdv: boolean;
     permFile: boolean;
     permPaie: boolean;
